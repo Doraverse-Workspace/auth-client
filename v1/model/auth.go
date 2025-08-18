@@ -8,7 +8,8 @@ package model
 //		"code": "1234567890"
 //	}
 type ExchangeTokenRequest struct {
-	Code string `json:"code"`
+	Code       string `json:"code"`
+	IncludeMFA bool   `json:"includeMFA"`
 }
 
 // ExchangeTokenResponse is the response body for the exchange token endpoint.
@@ -26,6 +27,12 @@ type ExchangeTokenResponse struct {
 	RefreshToken string `json:"refreshToken"`
 	AccessToken  string `json:"accessToken"`
 	ExpiresIn    int    `json:"expiresIn"`
+	MFA          MFA    `json:"mfa"`
+}
+
+type MFA struct {
+	ExpiresIn int    `json:"expiresIn"`
+	Token     string `json:"token"`
 }
 
 // GetAuthCodeRequest is the request body for the get auth code endpoint.
