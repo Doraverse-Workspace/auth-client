@@ -5,7 +5,9 @@ Go client library for interacting with authentication and MFA APIs of the Dorave
 ## ✨ Features
 
 - **🔑 Authentication**: Exchange authorization code for access token and refresh token
-- **🛡️ Multi-Factor Authentication (MFA)**: Support for requesting and verifying OTP codes
+- **🛡️ Multi-Factor Authentication (MFA)**: Support for requesting and verifying OTP codes  
+- **👤 User Management**: Get user profile information, logout, and session management
+- **🔗 Third-party Connectors**: Integration with external services like Google Drive
 - **🔒 TLS Support**: Support for mutual TLS authentication with certificates
 - **🐛 Debug Mode**: Debug mode for tracking requests/responses
 - **📋 Custom Headers**: Support for custom headers for tracking and authorization
@@ -106,6 +108,91 @@ if err != nil {
 fmt.Printf("MFA Token: %s\n", mfaResponse.Token)
 ```
 
+### 4. 👤 User Management
+
+```go
+import (
+    "github.com/Doraverse-Workspace/auth-client/v1/user"
+    "github.com/Doraverse-Workspace/auth-client/v1/model"
+)
+
+// Create headers with access token
+headers := model.RequestHeaders{
+    UserAgent:   "MyApp/1.0.0",
+    BearerToken: "your_access_token", // Token from authentication step
+    ClientIP:    "192.168.1.1",
+}
+
+// Create user client
+userClient := user.New(headers)
+
+// Get user profile information
+userInfo, err := userClient.GetUserInfo()
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("User ID: %s\n", userInfo.ID)
+fmt.Printf("Email: %s\n", userInfo.Email)
+fmt.Printf("Name: %s\n", userInfo.Name)
+
+// Logout user
+err = userClient.Logout()
+if err != nil {
+    panic(err)
+}
+
+// Remove user session (admin operation)
+err = userClient.RemoveSessionUser("user123", "workspace456")
+if err != nil {
+    panic(err)
+}
+```
+
+### 5. 🔗 Google Drive Connector
+
+```go
+import (
+    "github.com/Doraverse-Workspace/auth-client/v1/connector"
+    "github.com/Doraverse-Workspace/auth-client/v1/model"
+)
+
+// Create headers with access token
+headers := model.RequestHeaders{
+    UserAgent:   "MyApp/1.0.0",
+    BearerToken: "your_access_token", // Token from authentication step
+    ClientIP:    "192.168.1.1",
+}
+
+// Create connector client
+connectorClient := connector.New(headers)
+
+// Get Google Drive authorization URL
+authResponse, err := connectorClient.GoogleDriveAuthURL("https://yourapp.com/callback")
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("Auth URL: %s\n", authResponse.AuthURL)
+
+// Exchange authorization code for Google Drive token
+tokenResponse, err := connectorClient.GoogleDriveExchangeToken("auth_code", "state")
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("Google Drive Access Token: %s\n", tokenResponse.AccessToken)
+fmt.Printf("Expires In: %d seconds\n", tokenResponse.ExpiresIn)
+
+// Get existing Google Drive token
+existingToken, err := connectorClient.GoogleDriveGetTokenByAccessToken()
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("Existing Token: %s\n", existingToken.AccessToken)
+```
+
 ## 📂 Project Structure
 
 ```
@@ -117,10 +204,17 @@ auth-client/
 │   │   └── auth.go        # Authentication functions
 │   ├── mfa/
 │   │   └── mfa.go         # Multi-Factor Authentication functions
+│   ├── user/
+│   │   └── user.go        # User management functions
+│   ├── connector/
+│   │   ├── connector.go   # Base connector functionality
+│   │   └── google_drive.go # Google Drive integration
 │   └── model/
 │       ├── auth.go        # Auth request/response models
 │       ├── common.go      # Common models and headers
-│       └── mfa.go         # MFA request/response models
+│       ├── mfa.go         # MFA request/response models
+│       ├── user.go        # User models
+│       └── connector.go   # Connector models
 ├── go.mod
 └── README.md
 ```
@@ -154,6 +248,52 @@ type VerifyMFATokenRequest struct {
 // Response containing MFA token
 type VerifyMFATokenResponse struct {
     Token string `json:"token"`
+}
+```
+
+### 👤 User Management Models
+
+```go
+// Response containing user profile information
+type UserInfoResponse struct {
+    ID        string                 `json:"id"`
+    Email     string                 `json:"email"`
+    Name      string                 `json:"name"`
+    Metadata  map[string]interface{} `json:"metadata"`
+    CreatedAt string                 `json:"createdAt"`
+    UpdatedAt string                 `json:"updatedAt"`
+}
+
+// Request to remove user session
+type RemoveSessionUserRequest struct {
+    UserID      string `json:"userId"`
+    WorkspaceID string `json:"workspaceId"` // optional
+}
+```
+
+### 🔗 Google Drive Connector Models
+
+```go
+// Request for Google Drive authorization URL
+type GoogleDriveAuthURLRequest struct {
+    CallbackURL string `json:"callbackUrl"`
+}
+
+// Response containing Google Drive authorization URL
+type GoogleDriveAuthURLResponse struct {
+    AuthURL string `json:"authUrl"`
+}
+
+// Request to exchange Google Drive authorization code
+type GoogleDriveExchangeTokenRequest struct {
+    Code  string `json:"code"`
+    State string `json:"state"`
+}
+
+// Response containing Google Drive access token
+type GoogleDriveExchangeTokenResponse struct {
+    AccessToken string `json:"accessToken"`
+    ExpiresIn   int    `json:"expiresIn"`
 }
 ```
 
@@ -228,9 +368,22 @@ This project belongs to Doraverse Workspace.
 
 The client interacts with the following endpoints:
 
-- `POST /api/v1/auth/exchange-token` - 🔑 Exchange authorization code
-- `POST /api/v1/mfa/otp` - 📱 Request OTP code
-- `POST /api/v1/mfa/verify-otp` - ✅ Verify OTP code
+### 🔑 Authentication
+- `POST /api/v1/auth/exchange-token` - Exchange authorization code for tokens
+- `POST /api/v1/auth/logout` - Logout user session
+
+### 🛡️ Multi-Factor Authentication
+- `POST /api/v1/mfa/otp` - Request OTP code
+- `POST /api/v1/mfa/verify-otp` - Verify OTP code
+
+### 👤 User Management
+- `GET /api/v1/user/profile` - Get user profile information
+- `DELETE /api/v1/auth/user-session` - Remove user session
+
+### 🔗 Google Drive Connector
+- `GET /api/v1/auth/connectors/google-drive/auth-url` - Get Google Drive authorization URL
+- `POST /api/v1/auth/connectors/google-drive/exchange-token` - Exchange Google Drive authorization code
+- `GET /api/v1/auth/connectors/google-drive/token` - Get existing Google Drive token
 
 ## 💬 Support
 

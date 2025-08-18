@@ -30,8 +30,8 @@ var (
 
 // NewClient creates a new Client
 // returns a Client and an error if the client cannot be created
-func NewClient(config ClientConfig) *Client {
-	return &Client{
+func NewClient(config ClientConfig) {
+	client = &Client{
 		BaseURL: config.BaseURL,
 		TLS:     config.TLS,
 		IsDebug: config.IsDebug,
