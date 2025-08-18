@@ -98,3 +98,62 @@ func (m *mfa) VerifyMFA(code string) (*model.VerifyMFATokenResponse, error) {
 	}
 	return &res, nil
 }
+
+// ValidateMFAToken validates an MFA token
+// Required headers:
+// - Authorization: Bearer <access_token>
+// - Content-Type: application/json
+// Body:
+//
+//	{
+//		"token": "token_mfa"
+//	}
+//
+// Response:
+//
+//	{
+//		"userId": "1234567890",
+//		"username": "john_doe"
+//	}
+func (m *mfa) ValidateMFAToken(token string) (*model.ValidateMFATokenResponse, error) {
+	var (
+		data model.Response
+		res  model.ValidateMFATokenResponse
+		c    = client.GetClient()
+	)
+	request, err := c.NewRequest()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := request.R().
+		SetHeaders(m.Headers.ConstructHeaders()).
+		SetDebug(c.IsDebug).
+		SetBody(model.ValidateMFATokenRequest{
+			Token: token,
+		}).
+		Post(fmt.Sprintf("%s/api/v1/mfa/validate", c.BaseURL))
+	if err != nil {
+		client.Errorf(err, "failed to validate MFA token", c.IsDebug)
+		return nil, err
+	}
+	if resp.StatusCode() != 200 {
+		client.Errorf(fmt.Errorf("failed to validate MFA token"), "failed to validate MFA token", c.IsDebug)
+		return nil, fmt.Errorf("failed to validate MFA token")
+	}
+	err = json.Unmarshal(resp.Body(), &data)
+	if err != nil {
+		client.Errorf(err, "failed to unmarshal response", c.IsDebug)
+		return nil, err
+	}
+	b, err := json.Marshal(data.Data)
+	if err != nil {
+		client.Errorf(err, "failed to marshal response", c.IsDebug)
+		return nil, err
+	}
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		client.Errorf(err, "failed to unmarshal response", c.IsDebug)
+		return nil, err
+	}
+	return &res, nil
+}

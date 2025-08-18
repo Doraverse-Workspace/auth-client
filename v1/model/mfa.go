@@ -43,3 +43,16 @@ type VerifyMFATokenResponse struct {
 type ValidateMFATokenRequest struct {
 	Token string `json:"token"`
 }
+
+// ValidateMFATokenResponse is the response body for the ValidateMFAToken API
+// Token is the MFA token
+// Example:
+//
+//	{
+//		"userId": "1234567890",
+//		"username": "john_doe"
+//	}
+type ValidateMFATokenResponse struct {
+	UserID   string `json:"userId"`
+	Username string `json:"username"`
+}
