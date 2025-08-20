@@ -5,8 +5,9 @@ Go client library for interacting with authentication and MFA APIs of the Dorave
 ## ✨ Features
 
 - **🔑 Authentication**: Exchange authorization code for access token and refresh token
-- **🛡️ Multi-Factor Authentication (MFA)**: Support for requesting and verifying OTP codes  
+- **🛡️ Multi-Factor Authentication (MFA)**: Support for requesting, verifying, and validating OTP codes  
 - **👤 User Management**: Get user profile information, logout, and session management
+- **🏢 Workspace Management**: Create workspaces, invite members, update member roles, and manage member status
 - **🔗 Third-party Connectors**: Integration with external services like Google Drive
 - **🔒 TLS Support**: Support for mutual TLS authentication with certificates
 - **🐛 Debug Mode**: Debug mode for tracking requests/responses
@@ -42,7 +43,7 @@ func main() {
     }
     
     // Create client
-    client := v1.NewClient(config)
+    v1.NewClient(config)
 }
 ```
 
@@ -62,7 +63,7 @@ headers := model.RequestHeaders{
 }
 
 // Create auth client
-authClient := auth.NewAuthClient(headers)
+authClient := auth.New(headers)
 
 // Exchange authorization code for tokens
 response, err := authClient.ExchangeToken("your_authorization_code")
@@ -91,7 +92,7 @@ headers := model.RequestHeaders{
 }
 
 // Create MFA client
-mfaClient := mfa.NewMFA(headers)
+mfaClient := mfa.New(headers)
 
 // Request OTP code
 err := mfaClient.RequestMFAOtp()
@@ -106,6 +107,16 @@ if err != nil {
 }
 
 fmt.Printf("MFA Token: %s\n", mfaResponse.Token)
+fmt.Printf("Expires In: %d seconds\n", mfaResponse.ExpiresIn)
+
+// Validate MFA token
+validateResponse, err := mfaClient.ValidateMFAToken(mfaResponse.Token)
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("User ID: %s\n", validateResponse.UserID)
+fmt.Printf("Username: %s\n", validateResponse.Username)
 ```
 
 ### 4. 👤 User Management
@@ -149,7 +160,90 @@ if err != nil {
 }
 ```
 
-### 5. 🔗 Google Drive Connector
+### 5. 🏢 Workspace Management
+
+```go
+import (
+    "github.com/Doraverse-Workspace/auth-client/v1/workspace"
+    "github.com/Doraverse-Workspace/auth-client/v1/model"
+)
+
+// Create headers with access token
+headers := model.RequestHeaders{
+    UserAgent:   "MyApp/1.0.0",
+    BearerToken: "your_access_token", // Token from authentication step
+    ClientIP:    "192.168.1.1",
+}
+
+// Create workspace client
+workspaceClient := workspace.New(headers)
+
+// Create a new workspace
+createWorkspaceRequest := model.CreateWorkspaceRequest{
+    Members: []model.WorkspaceMember{
+        {
+            DepartmentCode: "DEPT001",
+            Email:          "admin@example.com",
+            IsCreator:      true,
+            Name:           "Admin User",
+            RoleCode:       "ADMIN",
+        },
+    },
+    Workspace: model.Workspace{
+        ID:       "workspace123",
+        Name:     "My Workspace",
+        Hostname: "my-workspace.doradora.vn",
+    },
+}
+
+workspaceResponse, err := workspaceClient.CreateWorkspace(createWorkspaceRequest)
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("Workspace ID: %s\n", workspaceResponse.WorkspaceID)
+
+// Invite members to workspace
+inviteRequest := model.InviteMembersRequest{
+    Members: []model.MemberInvite{
+        {
+            Email:          "user@example.com",
+            RoleCode:       "USER",
+            DepartmentCode: "DEPT002",
+        },
+    },
+}
+
+inviteResponse, err := workspaceClient.InviteMembers("workspace123", inviteRequest)
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("Invited members count: %d\n", len(inviteResponse.Members))
+
+// Update member role
+updateRequest := model.UpdateMemberRequest{
+    RoleCode:       "ADMIN",
+    DepartmentCode: "DEPT001",
+}
+
+updateResponse, err := workspaceClient.UpdateMember("workspace123", "member456", updateRequest)
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("Updated member ID: %s\n", updateResponse.ID)
+
+// Change member status (activate/deactivate)
+err = workspaceClient.ChangeStatusMember("workspace123", "member456", "active")
+if err != nil {
+    panic(err)
+}
+
+fmt.Printf("Member status updated successfully\n")
+```
+
+### 6. 🔗 Google Drive Connector
 
 ```go
 import (
@@ -206,6 +300,8 @@ auth-client/
 │   │   └── mfa.go         # Multi-Factor Authentication functions
 │   ├── user/
 │   │   └── user.go        # User management functions
+│   ├── workspace/
+│   │   └── workspace.go   # Workspace management functions
 │   ├── connector/
 │   │   ├── connector.go   # Base connector functionality
 │   │   └── google_drive.go # Google Drive integration
@@ -214,6 +310,7 @@ auth-client/
 │       ├── common.go      # Common models and headers
 │       ├── mfa.go         # MFA request/response models
 │       ├── user.go        # User models
+│       ├── workspace.go   # Workspace models
 │       └── connector.go   # Connector models
 ├── go.mod
 └── README.md
@@ -247,7 +344,19 @@ type VerifyMFATokenRequest struct {
 
 // Response containing MFA token
 type VerifyMFATokenResponse struct {
+    Token     string `json:"token"`
+    ExpiresIn int    `json:"expiresIn"` // Expiration time (seconds)
+}
+
+// Request to validate MFA token
+type ValidateMFATokenRequest struct {
     Token string `json:"token"`
+}
+
+// Response containing user information after MFA validation
+type ValidateMFATokenResponse struct {
+    UserID   string `json:"userId"`
+    Username string `json:"username"`
 }
 ```
 
@@ -268,6 +377,66 @@ type UserInfoResponse struct {
 type RemoveSessionUserRequest struct {
     UserID      string `json:"userId"`
     WorkspaceID string `json:"workspaceId"` // optional
+}
+```
+
+### 🏢 Workspace Management Models
+
+```go
+// Request to create a workspace
+type CreateWorkspaceRequest struct {
+    Members   []WorkspaceMember `json:"members"`
+    Workspace Workspace         `json:"workspace"`
+}
+
+// Workspace information
+type Workspace struct {
+    ID       string `json:"id"`
+    Name     string `json:"name"`
+    Hostname string `json:"hostname"`
+}
+
+// Workspace member information
+type WorkspaceMember struct {
+    DepartmentCode string `json:"departmentCode"`
+    Email          string `json:"email"`
+    IsCreator      bool   `json:"isCreator"`
+    Name           string `json:"name"`
+    RoleCode       string `json:"roleCode"`
+}
+
+// Response after creating workspace
+type CreateWorkspaceResponse struct {
+    WorkspaceID string          `json:"workspaceId"`
+    Members     []MemberReponse `json:"members"`
+}
+
+// Request to invite members to workspace
+type InviteMembersRequest struct {
+    Members []MemberInvite `json:"members"`
+}
+
+// Member invitation information
+type MemberInvite struct {
+    Email          string `json:"email"`
+    RoleCode       string `json:"roleCode"`
+    DepartmentCode string `json:"departmentCode"`
+}
+
+// Request to update member information
+type UpdateMemberRequest struct {
+    RoleCode       string `json:"roleCode"`
+    DepartmentCode string `json:"departmentCode"`
+}
+
+// Response after updating member
+type UpdateMemberResponse struct {
+    ID string `json:"id"`
+}
+
+// Request to change member status
+type ChangeStatusMemberRequest struct {
+    Status string `json:"status"` // "active" or "inactive"
 }
 ```
 
@@ -373,12 +542,19 @@ The client interacts with the following endpoints:
 - `POST /api/v1/auth/logout` - Logout user session
 
 ### 🛡️ Multi-Factor Authentication
-- `POST /api/v1/mfa/otp` - Request OTP code
-- `POST /api/v1/mfa/verify-otp` - Verify OTP code
+- `POST /api/v1/auth/mfa/otp` - Request OTP code
+- `POST /api/v1/auth/mfa/verify-otp` - Verify OTP code
+- `POST /api/v1/auth/mfa/validate` - Validate MFA token
 
 ### 👤 User Management
 - `GET /api/v1/user/profile` - Get user profile information
 - `DELETE /api/v1/auth/user-session` - Remove user session
+
+### 🏢 Workspace Management
+- `POST /api/v1/workspace` - Create a new workspace
+- `POST /api/v1/workspace/{workspaceId}/members` - Invite members to workspace
+- `PUT /api/v1/workspace/{workspaceId}/member/{memberId}` - Update member information
+- `PATCH /api/v1/workspace/{workspaceId}/member/{memberId}/status` - Change member status
 
 ### 🔗 Google Drive Connector
 - `GET /api/v1/auth/connectors/google-drive/auth-url` - Get Google Drive authorization URL
