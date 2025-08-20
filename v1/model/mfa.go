@@ -30,7 +30,8 @@ type VerifyMFATokenRequest struct {
 //		"token": "1234567890"
 //	}
 type VerifyMFATokenResponse struct {
-	Token string `json:"token"`
+	Token     string `json:"token"`
+	ExpiresIn int    `json:"expiresIn"`
 }
 
 // ValidateMFATokenRequest is the request body for the ValidateMFAToken API

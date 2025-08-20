@@ -8,11 +8,15 @@ import (
 	"github.com/Doraverse-Workspace/auth-client/v1/model"
 )
 
+const (
+	pathMFAOtp = "api/v1/auth/mfa"
+)
+
 type mfa struct {
 	Headers model.RequestHeaders
 }
 
-func NewMFA(headers model.RequestHeaders) *mfa {
+func New(headers model.RequestHeaders) *mfa {
 	return &mfa{
 		Headers: headers,
 	}
@@ -32,7 +36,7 @@ func (m *mfa) RequestMFAOtp() error {
 	resp, err := request.R().
 		SetHeaders(m.Headers.ConstructHeaders()).
 		SetDebug(c.IsDebug).
-		Post(fmt.Sprintf("%s/api/v1/mfa/otp", c.BaseURL))
+		Post(fmt.Sprintf("%s/%s/otp", c.BaseURL, pathMFAOtp))
 	if err != nil {
 		return err
 	}
@@ -73,7 +77,7 @@ func (m *mfa) VerifyMFA(code string) (*model.VerifyMFATokenResponse, error) {
 		SetBody(model.VerifyMFATokenRequest{
 			Code: code,
 		}).
-		Post(fmt.Sprintf("%s/api/v1/mfa/verify-otp", c.BaseURL))
+		Post(fmt.Sprintf("%s/%s/verify-otp", c.BaseURL, pathMFAOtp))
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +135,7 @@ func (m *mfa) ValidateMFAToken(token string) (*model.ValidateMFATokenResponse, e
 		SetBody(model.ValidateMFATokenRequest{
 			Token: token,
 		}).
-		Post(fmt.Sprintf("%s/api/v1/mfa/validate", c.BaseURL))
+		Post(fmt.Sprintf("%s/%s/validate", c.BaseURL, pathMFAOtp))
 	if err != nil {
 		client.Errorf(err, "failed to validate MFA token", c.IsDebug)
 		return nil, err
