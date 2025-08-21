@@ -53,6 +53,7 @@ func (a *auth) GetAccessTokenByRefreshToken(refreshToken string) (*model.GetAcce
 		SetBody(model.GetAccessTokenByRefreshTokenRequest{
 			RefreshToken: refreshToken,
 		}).
+		SetDebug(c.IsDebug).
 		Post(fmt.Sprintf("%s/api/v1/auth/refresh", c.BaseURL))
 	if err != nil {
 		return nil, err
@@ -95,7 +96,7 @@ func (a *auth) GetAccessTokenByRefreshToken(refreshToken string) (*model.GetAcce
 //		"accessToken": "1234567890",
 //		"expiresIn": 1800
 //	}
-func (a *auth) ExchangeToken(code string) (*model.ExchangeTokenResponse, error) {
+func (a *auth) ExchangeToken(code string, includeMFA bool) (*model.ExchangeTokenResponse, error) {
 	var (
 		data model.Response
 		res  model.ExchangeTokenResponse
@@ -107,8 +108,10 @@ func (a *auth) ExchangeToken(code string) (*model.ExchangeTokenResponse, error) 
 	}
 	resp, err := request.R().
 		SetHeaders(a.Headers.ConstructHeaders()).
+		SetDebug(c.IsDebug).
 		SetBody(model.ExchangeTokenRequest{
-			Code: code,
+			Code:       code,
+			IncludeMFA: includeMFA,
 		}).
 		Post(fmt.Sprintf("%s/api/v1/auth/exchange-token", c.BaseURL))
 
@@ -192,4 +195,33 @@ func (a *auth) GetAuthCodeRequest(userId string, workspaceId string) (*model.Get
 		return nil, err
 	}
 	return &res, nil
+}
+
+// ValidateToken validates a token
+// returns a boolean and an error if the validate token fails
+// token is the token to validate
+// Headers:
+// - Authorization: Bearer <access_token>
+// - Content-Type: application/json
+func (a *auth) ValidateToken() (bool, error) {
+	var (
+		c = client.GetClient()
+	)
+	request, err := c.NewRequest()
+	if err != nil {
+		return false, err
+	}
+	resp, err := request.R().
+		SetHeaders(a.Headers.ConstructHeaders()).
+		SetDebug(c.IsDebug).
+		Post(fmt.Sprintf("%s/api/v1/auth/validate-auth-token", c.BaseURL))
+	if err != nil {
+		client.Errorf(err, "failed to validate token", c.IsDebug)
+		return false, err
+	}
+	if resp.StatusCode() != 200 {
+		client.Errorf(errors.New("failed to validate token"), "failed to validate token", c.IsDebug)
+		return false, fmt.Errorf("failed to validate token")
+	}
+	return true, nil
 }

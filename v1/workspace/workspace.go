@@ -18,6 +18,34 @@ func New(headers model.RequestHeaders) *Workspace {
 	return &Workspace{Headers: headers}
 }
 
+// SyncData ...
+func (w *Workspace) SyncData(payload model.SyncDataRequest) error {
+	var (
+		c = client.GetClient()
+	)
+
+	request, err := c.NewRequest()
+	if err != nil {
+		return err
+	}
+
+	resp, err := request.R().
+		SetHeaders(w.Headers.ConstructHeaders()).
+		SetDebug(c.IsDebug).
+		SetBody(payload).
+		Post(fmt.Sprintf("%s/api/v1/migration/workspace", c.BaseURL))
+	if err != nil {
+		client.Errorf(err, "failed to sync data", c.IsDebug)
+		return err
+	}
+
+	if resp.StatusCode() != 200 {
+		client.Errorf(fmt.Errorf("failed to sync data"), "failed to sync data", c.IsDebug)
+		return fmt.Errorf("failed to sync data")
+	}
+	return nil
+}
+
 // CreateWorkspace creates a new workspace
 // Required headers:
 // - Content-Type: application/json
@@ -147,7 +175,7 @@ func (w *Workspace) InviteMembers(workspaceId string, payload model.InviteMember
 		SetHeaders(w.Headers.ConstructHeaders()).
 		SetDebug(c.IsDebug).
 		SetBody(payload).
-		Post(fmt.Sprintf("%s/%s/%s/members", c.BaseURL, path, workspaceId))
+		Post(fmt.Sprintf("%s/%s/%s/member", c.BaseURL, path, workspaceId))
 	if err != nil {
 		client.Errorf(err, "failed to invite members", c.IsDebug)
 		return nil, err

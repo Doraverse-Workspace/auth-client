@@ -54,6 +54,8 @@ type WorkspaceMember struct {
 	IsCreator      bool   `json:"isCreator"`
 	Name           string `json:"name"`
 	RoleCode       string `json:"roleCode"`
+	UserID         string `json:"userId"`
+	Status         string `json:"status"`
 }
 
 // WorkspaceInfoResponse is the response body for getting workspace information
@@ -163,4 +165,34 @@ type UpdateMemberResponse struct {
 //	}
 type ChangeStatusMemberRequest struct {
 	Status string `json:"status"`
+}
+
+// SyncDataRequest is the request body for syncing data
+// Example:
+//
+//	{
+//		"workspace": {
+//			"id": "1234567890",
+//			"name": "Workspace Name",
+//			"hostname": "workspace-name.doradora.vn"
+//		},
+//		"members": [
+//			{
+//				"departmentCode": "1234567890",
+//				"email": "john.doe@example.com",
+//				"isCreator": true,
+//				"name": "John Doe",
+//				"roleCode": "ADMIN"
+//				"id": "1234567890",
+//				"userId": "1234567890"
+//			}
+//		]
+//	}
+type SyncDataRequest struct {
+	Data []SyncDataWorkspace `json:"data"`
+}
+
+type SyncDataWorkspace struct {
+	Workspace Workspace         `json:"workspace"`
+	Members   []WorkspaceMember `json:"members"`
 }

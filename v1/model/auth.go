@@ -24,10 +24,11 @@ type ExchangeTokenRequest struct {
 //		"expiresIn": 1800 // 30 minutes
 //	}
 type ExchangeTokenResponse struct {
-	RefreshToken string `json:"refreshToken"`
-	AccessToken  string `json:"accessToken"`
-	ExpiresIn    int    `json:"expiresIn"`
-	MFA          MFA    `json:"mfa"`
+	RefreshToken          string `json:"refreshToken"`
+	RefreshTokenExpiresIn int    `json:"refreshTokenExpiresIn"`
+	AccessToken           string `json:"accessToken"`
+	ExpiresIn             int    `json:"expiresIn"`
+	MFA                   MFA    `json:"mfa"`
 }
 
 type MFA struct {
