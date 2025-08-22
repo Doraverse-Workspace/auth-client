@@ -39,7 +39,7 @@ func (s RequestHeaders) ConstructHeaders() map[string]string {
 	}
 	// if client source is set, use the client source
 	if s.ClientSource != "" {
-		headers["X-Client-Code"] = s.ClientSource
+		headers["X-Client-Scope"] = s.ClientSource
 	}
 	// default content type is application/json
 	headers["Content-Type"] = "application/json"
