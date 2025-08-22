@@ -72,7 +72,7 @@ func (u *user) GetUserInfo() (*model.UserInfoResponse, error) {
 // Required headers:
 // - Authorization: Bearer <access_token>
 // - Content-Type: application/json
-func (u *user) Logout() error {
+func (u *user) Logout(refreshToken string) error {
 	var (
 		c = client.GetClient()
 	)
@@ -83,6 +83,9 @@ func (u *user) Logout() error {
 	resp, err := request.R().
 		SetHeaders(u.Headers.ConstructHeaders()).
 		SetDebug(c.IsDebug).
+		SetBody(model.LogoutRequest{
+			RefreshToken: refreshToken,
+		}).
 		Post(fmt.Sprintf("%s/api/v1/auth/logout", c.BaseURL))
 	if err != nil {
 		client.Errorf(err, "failed to logout", c.IsDebug)

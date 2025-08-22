@@ -47,7 +47,7 @@ func main() {
 }
 ```
 
-### 2. 🔑 Authentication - Exchange Code for Token
+### 2. 🔑 Authentication - Xác thực - Exchange Code for Token
 
 ```go
 import (
@@ -55,17 +55,17 @@ import (
     "github.com/Doraverse-Workspace/auth-client/v1/model"
 )
 
-// Create headers for request
+// Tạo headers cho request - Create headers for request
 headers := model.RequestHeaders{
     UserAgent:   "MyApp/1.0.0",
     ClientIP:    "192.168.1.1",
     ContentType: "application/json",
 }
 
-// Create auth client
+// Tạo auth client - Create auth client
 authClient := auth.New(headers)
 
-// Exchange authorization code for tokens
+// Đổi authorization code lấy tokens - Exchange authorization code for tokens
 response, err := authClient.ExchangeToken("your_authorization_code")
 if err != nil {
     panic(err)
@@ -76,7 +76,7 @@ fmt.Printf("Refresh Token: %s\n", response.RefreshToken)
 fmt.Printf("Expires In: %d seconds\n", response.ExpiresIn)
 ```
 
-### 3. 🛡️ Multi-Factor Authentication (MFA)
+### 3. 🛡️ Multi-Factor Authentication (MFA) - Xác thực đa yếu tố
 
 ```go
 import (
@@ -84,23 +84,23 @@ import (
     "github.com/Doraverse-Workspace/auth-client/v1/model"
 )
 
-// Create headers with access token
+// Tạo headers với access token - Create headers with access token
 headers := model.RequestHeaders{
     UserAgent:   "MyApp/1.0.0",
     BearerToken: "your_access_token", // Token from authentication step
     ClientIP:    "192.168.1.1",
 }
 
-// Create MFA client
+// Tạo MFA client - Create MFA client
 mfaClient := mfa.New(headers)
 
-// Request OTP code
+// Yêu cầu mã OTP - Request OTP code
 err := mfaClient.RequestMFAOtp()
 if err != nil {
     panic(err)
 }
 
-// Verify OTP code
+// Xác minh mã OTP - Verify OTP code
 mfaResponse, err := mfaClient.VerifyMFA("123456") // OTP code from user
 if err != nil {
     panic(err)
@@ -109,7 +109,7 @@ if err != nil {
 fmt.Printf("MFA Token: %s\n", mfaResponse.Token)
 fmt.Printf("Expires In: %d seconds\n", mfaResponse.ExpiresIn)
 
-// Validate MFA token
+// Xác thực MFA token - Validate MFA token
 validateResponse, err := mfaClient.ValidateMFAToken(mfaResponse.Token)
 if err != nil {
     panic(err)
@@ -119,7 +119,7 @@ fmt.Printf("User ID: %s\n", validateResponse.UserID)
 fmt.Printf("Username: %s\n", validateResponse.Username)
 ```
 
-### 4. 👤 User Management
+### 4. 👤 User Management - Quản lý người dùng
 
 ```go
 import (
@@ -127,17 +127,17 @@ import (
     "github.com/Doraverse-Workspace/auth-client/v1/model"
 )
 
-// Create headers with access token
+// Tạo headers với access token - Create headers with access token
 headers := model.RequestHeaders{
     UserAgent:   "MyApp/1.0.0",
     BearerToken: "your_access_token", // Token from authentication step
     ClientIP:    "192.168.1.1",
 }
 
-// Create user client
+// Tạo user client - Create user client
 userClient := user.New(headers)
 
-// Get user profile information
+// Lấy thông tin profile người dùng - Get user profile information
 userInfo, err := userClient.GetUserInfo()
 if err != nil {
     panic(err)
@@ -146,21 +146,25 @@ if err != nil {
 fmt.Printf("User ID: %s\n", userInfo.ID)
 fmt.Printf("Email: %s\n", userInfo.Email)
 fmt.Printf("Name: %s\n", userInfo.Name)
+fmt.Printf("Created At: %s\n", userInfo.CreatedAt)
+fmt.Printf("Updated At: %s\n", userInfo.UpdatedAt)
 
-// Logout user
-err = userClient.Logout()
+// Logout user - đăng xuất người dùng
+// Cần cung cấp refreshToken để thực hiện đăng xuất
+err = userClient.Logout("your_refresh_token") // Token from authentication step
 if err != nil {
     panic(err)
 }
 
-// Remove user session (admin operation)
+// Xóa phiên người dùng (thao tác admin) - Remove user session (admin operation)  
+// Tham số workspaceId là tùy chọn - workspaceId parameter is optional
 err = userClient.RemoveSessionUser("user123", "workspace456")
 if err != nil {
     panic(err)
 }
 ```
 
-### 5. 🏢 Workspace Management
+### 5. 🏢 Workspace Management - Quản lý không gian làm việc
 
 ```go
 import (
@@ -168,17 +172,17 @@ import (
     "github.com/Doraverse-Workspace/auth-client/v1/model"
 )
 
-// Create headers with access token
+// Tạo headers với access token - Create headers with access token
 headers := model.RequestHeaders{
     UserAgent:   "MyApp/1.0.0",
     BearerToken: "your_access_token", // Token from authentication step
     ClientIP:    "192.168.1.1",
 }
 
-// Create workspace client
+// Tạo workspace client - Create workspace client
 workspaceClient := workspace.New(headers)
 
-// Create a new workspace
+// Tạo workspace mới - Create a new workspace
 createWorkspaceRequest := model.CreateWorkspaceRequest{
     Members: []model.WorkspaceMember{
         {
@@ -203,7 +207,7 @@ if err != nil {
 
 fmt.Printf("Workspace ID: %s\n", workspaceResponse.WorkspaceID)
 
-// Invite members to workspace
+// Mời thành viên vào workspace - Invite members to workspace
 inviteRequest := model.InviteMembersRequest{
     Members: []model.MemberInvite{
         {
@@ -221,7 +225,7 @@ if err != nil {
 
 fmt.Printf("Invited members count: %d\n", len(inviteResponse.Members))
 
-// Update member role
+// Cập nhật vai trò thành viên - Update member role
 updateRequest := model.UpdateMemberRequest{
     RoleCode:       "ADMIN",
     DepartmentCode: "DEPT001",
@@ -234,7 +238,7 @@ if err != nil {
 
 fmt.Printf("Updated member ID: %s\n", updateResponse.ID)
 
-// Change member status (activate/deactivate)
+// Thay đổi trạng thái thành viên - Change member status (activate/deactivate)
 err = workspaceClient.ChangeStatusMember("workspace123", "member456", "active")
 if err != nil {
     panic(err)
@@ -243,7 +247,7 @@ if err != nil {
 fmt.Printf("Member status updated successfully\n")
 ```
 
-### 6. 🔗 Google Drive Connector
+### 6. 🔗 Google Drive Connector - Kết nối Google Drive
 
 ```go
 import (
@@ -251,17 +255,17 @@ import (
     "github.com/Doraverse-Workspace/auth-client/v1/model"
 )
 
-// Create headers with access token
+// Tạo headers với access token - Create headers with access token
 headers := model.RequestHeaders{
     UserAgent:   "MyApp/1.0.0",
     BearerToken: "your_access_token", // Token from authentication step
     ClientIP:    "192.168.1.1",
 }
 
-// Create connector client
+// Tạo connector client - Create connector client
 connectorClient := connector.New(headers)
 
-// Get Google Drive authorization URL
+// Lấy Google Drive authorization URL - Get Google Drive authorization URL
 authResponse, err := connectorClient.GoogleDriveAuthURL("https://yourapp.com/callback")
 if err != nil {
     panic(err)
@@ -269,7 +273,7 @@ if err != nil {
 
 fmt.Printf("Auth URL: %s\n", authResponse.AuthURL)
 
-// Exchange authorization code for Google Drive token
+// Đổi authorization code lấy Google Drive token - Exchange authorization code for Google Drive token
 tokenResponse, err := connectorClient.GoogleDriveExchangeToken("auth_code", "state")
 if err != nil {
     panic(err)
@@ -278,7 +282,7 @@ if err != nil {
 fmt.Printf("Google Drive Access Token: %s\n", tokenResponse.AccessToken)
 fmt.Printf("Expires In: %d seconds\n", tokenResponse.ExpiresIn)
 
-// Get existing Google Drive token
+// Lấy Google Drive token hiện tại - Get existing Google Drive token
 existingToken, err := connectorClient.GoogleDriveGetTokenByAccessToken()
 if err != nil {
     panic(err)
@@ -316,9 +320,9 @@ auth-client/
 └── README.md
 ```
 
-## 📋 API Models
+## 📋 API Models - Các mô hình API
 
-### 🔑 Authentication Models
+### 🔑 Authentication Models - Mô hình xác thực
 
 ```go
 // Request to exchange authorization code
@@ -334,7 +338,7 @@ type ExchangeTokenResponse struct {
 }
 ```
 
-### 🛡️ MFA Models
+### 🛡️ MFA Models - Mô hình xác thực đa yếu tố
 
 ```go
 // Request to verify MFA OTP
@@ -360,7 +364,7 @@ type ValidateMFATokenResponse struct {
 }
 ```
 
-### 👤 User Management Models
+### 👤 User Management Models - Mô hình quản lý người dùng
 
 ```go
 // Response containing user profile information
@@ -373,14 +377,19 @@ type UserInfoResponse struct {
     UpdatedAt string                 `json:"updatedAt"`
 }
 
-// Request to remove user session
+// Request to remove user session - yêu cầu xóa phiên người dùng
 type RemoveSessionUserRequest struct {
     UserID      string `json:"userId"`
     WorkspaceID string `json:"workspaceId"` // optional
 }
+
+// Request to logout user - yêu cầu đăng xuất người dùng
+type LogoutRequest struct {
+    RefreshToken string `json:"refreshToken"` // Required refresh token
+}
 ```
 
-### 🏢 Workspace Management Models
+### 🏢 Workspace Management Models - Mô hình quản lý không gian làm việc
 
 ```go
 // Request to create a workspace
@@ -440,7 +449,7 @@ type ChangeStatusMemberRequest struct {
 }
 ```
 
-### 🔗 Google Drive Connector Models
+### 🔗 Google Drive Connector Models - Mô hình kết nối Google Drive
 
 ```go
 // Request for Google Drive authorization URL
@@ -466,7 +475,7 @@ type GoogleDriveExchangeTokenResponse struct {
 }
 ```
 
-### 🔄 Common Models
+### 🔄 Common Models - Mô hình chung
 
 ```go
 // Headers for API requests
