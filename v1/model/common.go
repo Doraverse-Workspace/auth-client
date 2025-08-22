@@ -14,10 +14,11 @@ import "fmt"
 //		"ClientIP": "127.0.0.1"
 //	}
 type RequestHeaders struct {
-	UserAgent   string
-	BearerToken string
-	ClientIP    string
-	ContentType string
+	UserAgent    string
+	BearerToken  string
+	ClientIP     string
+	ContentType  string
+	ClientSource string
 }
 
 // ConstructHeaders constructs the headers for the API request
@@ -35,6 +36,10 @@ func (s RequestHeaders) ConstructHeaders() map[string]string {
 	// if user agent is set, use the user agent
 	if s.UserAgent != "" {
 		headers["Client-User-Agent"] = s.UserAgent
+	}
+	// if client source is set, use the client source
+	if s.ClientSource != "" {
+		headers["X-Client-Code"] = s.ClientSource
 	}
 	// default content type is application/json
 	headers["Content-Type"] = "application/json"
