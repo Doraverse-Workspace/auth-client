@@ -41,3 +41,14 @@ type RemoveSessionUserRequest struct {
 
 type RemoveSessionUserResponse struct {
 }
+
+// LogoutRequest is the request body for the logout endpoint.
+// RefreshToken is the refresh token.
+// Example:
+//
+//	{
+//		"refreshToken": "1234567890"
+//	}
+type LogoutRequest struct {
+	RefreshToken string `json:"refreshToken"`
+}
