@@ -19,6 +19,7 @@ type RequestHeaders struct {
 	ClientIP     string
 	ContentType  string
 	ClientSource string
+	ClientScope  string
 }
 
 // ConstructHeaders constructs the headers for the API request
@@ -39,7 +40,11 @@ func (s RequestHeaders) ConstructHeaders() map[string]string {
 	}
 	// if client source is set, use the client source
 	if s.ClientSource != "" {
-		headers["X-Client-Scope"] = s.ClientSource
+		headers["X-Client-Code"] = s.ClientSource
+	}
+	// if client scope is set, use the client scope
+	if s.ClientScope != "" {
+		headers["X-Client-Scope"] = s.ClientScope
 	}
 	// default content type is application/json
 	headers["Content-Type"] = "application/json"
